@@ -1,0 +1,50 @@
+---
+output:
+  pdf_document: default
+  html_document: default
+---
+source <-("https://www.kaggle.com/datasets/rkiattisak/sports-car-prices-dataset")
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+##summary is given for quantitative variables
+
+```{r}
+summary(machines)
+
+
+
+table(machines$Car.Make)
+
+```
+#table is given for qualitative variables
+```{r}
+
+log(machines$Year)
+```
+#log is the transformation of atleast one variable
+
+#plot is the anyone quantitative variable
+```{r}
+plot(machines$Year)
+```
+
+```{r}
+x=(machines$Horsepower)
+y=(machines$Torque..lb.ft.)
+plot(x,y)
+```
+
+#scatterplot is given
