@@ -1,0 +1,139 @@
+---
+title: "Assignment 02"
+output:
+  pdf_document: default
+  date: "2023-09-30"
+  word_document: default
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+### Task 1
+Loading the UniversalBank.csv and display the summary of dataset
+
+```{r}
+data <- read.csv("UniversalBank.csv")
+summary(data)
+```
+
+ Now observe the attribute of dataframe
+
+```{r}
+str(data)
+```
+
+### Task 1
+
+```{r}
+library(caret)
+library(caret)
+
+# Load the dataset
+df <- read.csv("UniversalBank.csv", header = TRUE)
+
+# Create a data frame for the new customer
+new_customer <- data.frame(Age = 40, Experience = 10, Income = 84, Family = 2, 
+                       CCAvg = 2, Education_1 = 0, Mortgage = 0, Securities.Account = 0, 
+                       CD.Account = 0, Online = 1, CreditCard = 1)
+
+# Transform categorical predictors into dummy variables
+df$Education <- as.factor(df$Education)
+df$Personal.Loan <- as.factor(df$Personal.Loan)
+df$Securities.Account <- as.factor(df$Securities.Account)
+df$CD.Account <- as.factor(df$CD.Account)
+df$Online <- as.factor(df$Online)
+df$CreditCard <- as.factor(df$CreditCard)
+
+# Partition the dataset into 60% training and 40% validation sets
+set.seed(123)
+trainIndex <- createDataPartition(df$Personal.Loan, p = 0.6, list = FALSE)
+train_set <- df[trainIndex, ]
+valid_set <- df[-trainIndex, ]
+
+#remove column ID and ZipCode
+
+library(class)
+# Apply k-NN classification with k = 1
+knn_pred <- knn(train_set[, -c(1, 5,10)], valid_set[, -c(1, 5,10)], train_set$Personal.Loan, k = 1)
+
+# Predict the new class of new customer
+new_cust_pred <- knn(train_set[, -c(1, 5,10)], new_customer, train_set$Personal.Loan, k = 1)
+new_cust_pred
+
+```
+<br>
+### task 2 
+What is the choice of the k that balances between the overfitting and ignoring the predictor information
+
+```{r}
+# Apply k fold cross-validation to compute the best value of k
+set.seed(123)
+n_fold <- trainControl(method = "cv", number = 10)
+n_seq <- seq(1, 20, by = 1)
+model <- train(Personal.Loan ~ ., data = train_set[, -c(1, 5)], method = "knn", 
+                   trControl = n_fold, tuneGrid = data.frame(k = n_seq))
+model
+# Plot different values of k
+plot(model)
+```
+<br>
+### Task 3 <br> 
+Show the confusion matrix for validation data that result form using the best k
+```{r}
+pred <- knn(train = train_set[,-10],test = valid_set[,-10], cl = train_set[,10], k=3)
+confusionMatrix(pred, valid_set[,10])
+```
+
+### Task 4 <br>
+Consider the following customer: Age = 40, Experience = 10, Income = 84, Family = 2, CCAvg = 2, Education_1 = 0, Education_2 = 1, Education_3 = 0, Mortgage = 0, Securities Account = 0, CD Account = 0, Online = 1 and Credit Card = 1. Classify the customer using the best k.
+
+```{r}
+new_customer2 <- data.frame(Age = 40, Experience = 10, Income = 84, Family = 2, CCAvg = 2, Education = 0, Mortgage = 0, Securities.Account = 0, CD.Account = 0, Online = 1, CreditCard = 1)
+knn_build <- knn(train = train_set[,-c(1,5,10)],test = new_customer2, cl = train_set[,10], k=3)
+knn_build
+```
+
+### Task 5 <br>\ 
+Repartition the data, this time into training, validation, and test sets (50% : 30% : 20%). Apply the k-NN method with the k chosen above. Compare the confusion matrix of the test set with that of the training and validation sets. Comment on the differences and their reason.
+
+```{r}
+
+## Repartition the data into training, validation, and test sets (50% : 30% : 20%)
+set.seed(123) # Setting seed to reproduce results
+index_train <- createDataPartition(df$Personal.Loan, p = 0.5, list = FALSE)
+train_set <- df[index_train,]
+index_val_test <- createDataPartition(df[-index_train, ]$Personal.Loan, p = 0.6, list = FALSE)
+val_test_set <- df[-index_train, ]
+val_set <- val_test_set[index_val_test, ]
+test_set <- val_test_set[-index_val_test, ]
+
+# Set up the train control with 10-fold cross-validation
+trControl <- trainControl(method="cv", number=10)
+
+set.seed(123)
+valid_pred <- knn(train_set[,-c(1,5,10)], val_set[,-c(1,5,10)], cl = train_set[,10], k = 3)
+test_pred <- knn(train_set[,-c(1,5,10)], test_set[,-c(1,5,10)], cl = train_set[,10], k = 3)
+train_pred <- knn(train_set[,-c(1,5,10)], train_set[,-c(1,5,10)], cl = train_set[,10], k = 3)
+
+
+
+# Create confusion matrices
+confusion_train <- confusionMatrix(train_pred, train_set$Personal.Loan)
+confusion_val <- confusionMatrix(valid_pred, val_set$Personal.Loan)
+confusion_test <- confusionMatrix(test_pred, test_set$Personal.Loan)
+
+# Display the confusion matrices
+confusion_train
+confusion_val
+confusion_test
+
+```
+
+**Observation**
+The confusion matrices reveal good model accuracy but highlight issues with specificity, indicating potential difficulties in correctly identifying negative cases. This, combined with a drop in performance on validation and test data compared to training data, suggests possible overfitting and a need for model adjustments or additional strategies to address class imbalance.
