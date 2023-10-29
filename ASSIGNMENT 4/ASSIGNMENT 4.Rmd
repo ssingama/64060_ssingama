@@ -1,0 +1,69 @@
+---
+title: "Assignment 04"
+output:
+  pdf_document: default
+  word_document: default
+  html_document: default
+date: "2023-10-21"
+---
+
+```{r}
+# Load required libraries
+library(cluster)
+library(tidyverse)
+
+# Import the data (Assume the file Pharmaceuticals.csv is in the working directory)
+dataSet <- read.csv("Pharmaceuticals.csv")
+
+# --- Part a:---
+
+# Select only the numerical features for clustering
+numericalData <- dataSet[, c("Market_Cap", "Beta", "PE_Ratio", "ROE", "ROA", "Asset_Turnover", "Leverage", "Rev_Growth", "Net_Profit_Margin")]
+
+# Normalize the features to ensure comparability
+normalizedData <- scale(numericalData)
+
+# Conduct k-Means clustering (Choosing k=5 for this distinct copy)
+kmeansResult <- kmeans(normalizedData, 5)
+
+# Visualize the clusters via clusplot
+clusplot(normalizedData, kmeansResult$cluster, color=TRUE, shade=TRUE, labels=2, lines=0)
+
+# --- Part b: ---
+
+# Compute the mean for each attribute in each cluster
+clusterStats <- aggregate(normalizedData, by=list(kmeansResult$cluster), FUN=mean)
+print("Cluster Statistics:")
+print(clusterStats)
+
+# --- Part c:---
+
+# Add the cluster labels to the original dataSet
+dataSet$KmeansCluster <- kmeansResult$cluster
+
+# Investigate trends in non-numeric variables
+analyze_pattern <- function(attribute, cluster_label) {
+  freq_table <- table(attribute, cluster_label)
+  most_common <- apply(freq_table, 2, function(col) names(which.max(col)))
+  return(most_common)
+}
+
+most_common_median_rec <- analyze_pattern(dataSet$Median_Recommendation, dataSet$KmeansCluster)
+most_common_location <- analyze_pattern(dataSet$Location, dataSet$KmeansCluster)
+most_common_exchange <- analyze_pattern(dataSet$Exchange, dataSet$KmeansCluster)
+
+cat("Trends in Non-Numeric Variables:\n")
+cat("Most Common Median Recommendation:", most_common_median_rec, "\n")
+cat("Most Common Location:", most_common_location, "\n")
+cat("Most Common Exchange:", most_common_exchange, "\n")
+
+# --- Part d: ---
+
+# Name the clusters according to their characteristics
+uniqueClusterNames <- c("Emerging Entities", "Reliable Performers", "High Risk-Reward", "Profit Leaders", "Volatile Ventures")
+dataSet$NamedCluster <- as.factor(uniqueClusterNames[dataSet$KmeansCluster])
+
+# Show a preview of dataSet to confirm cluster labeling and naming
+head(dataSet)
+
+```
