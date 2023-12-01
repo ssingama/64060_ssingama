@@ -1,0 +1,158 @@
+---
+title: "ASSIGNMENT_5"
+output:
+  word_document: default
+  pdf_document: default
+date: "2023-11-30"
+---
+
+# Introduction
+
+The data contains the information about 77 cereal in rows and 16 variables containing observation about different components of cereals like name of cereal, manufacturer, calories, protein, fats, sodium, potassium, fiber and vitamins etc. The Analysis is done by using the Hierarchical Clustering Model, which is an algorithm of unsupervised learning in which the number of clusters is not pre_specified. But select on the basis of comparison between different clusters created by data points of the data. The Analysis is done using R. \## Loading the required packages
+
+```{r packages, include=FALSE}
+library(cluster)
+library(ggplot2)
+library(reshape2)
+```
+
+Now read the csv file of the data and look at the above few rows and structure. \## R Markdown
+
+```{r cereals}
+cereal_data <- read.csv("Cereals.csv")
+head(cereal_data)
+str(cereal_data)
+```
+
+## Data Preporcessing
+
+After having a look into the data, it is time to process tha data and do some cleaning using the na.omit function.
+
+```{r data processing, echo=FALSE}
+cereal_data <- na.omit(cereal_data)
+str(cereal_data)
+```
+
+## Selecting the relevant columns for the Analysis
+
+Let's consider columns 4 to 13 (calories to potassium) for clustering. Because the rest of the variables includes categorical values and also the last 3 columns cannot be used for clustering and find the best cluster
+
+```{r selecting data}
+cereal_data2 <- cereal_data[, 4:12]
+head(cereal_data2)
+```
+
+## Normalization
+
+Normalization of the data is done to make all the observations having values comapreable to each other.
+
+```{r normalization}
+normalized_data <- scale(cereal_data2)
+head(normalized_data)
+```
+## Hierarchical Clustering
+Performing hierarchical clustering using different linkage methods (single, complete, average, and Ward).
+Clustering is performed using the agnes() function and metric set at euclidean to find Euclidean distance.
+```{r}
+single_linkage <- agnes(normalized_data, method = "single", metric = "euclidean")
+complete_linkage <- agnes(normalized_data, method = "complete", metric = "euclidean")
+average_linkage <- agnes(normalized_data, method = "average", metric = "euclidean")
+ward_linkage <- agnes(normalized_data, method = "ward", metric = "euclidean")
+
+```
+## dendogram Visualization
+Clustering has been done. To visualize the results of clusters, let's visualize the results so that the comparison between the methods and number of   clusters will be decided.
+```{r}
+# Plot dendrograms for each method
+par(mfrow=c(2,2))
+plot(single_linkage, main="Single Linkage", sub="", col.main="red")
+plot(complete_linkage, main="Complete Linkage", sub="", col.main="red")
+plot(average_linkage, main="Average Linkage", sub="", col.main="red")
+plot(ward_linkage, main="Ward Linkage", sub="", col.main="red")
+```
+## Extracting the information from the Clusters
+From the visualization we can see that max 3 clusters will be the best to cluster the whole data to compare the clusters
+setting the number of clusters to 3 in each method
+```{r}
+# Single Linkage
+single_clusters <- cutree(single_linkage, k = 3)  # Adjust 'k' based on the desired number of clusters
+single_cluster_sizes <- table(single_clusters)
+single_cluster_means <- aggregate(normalized_data, by = list(Cluster = single_clusters), mean)
+
+# Complete Linkage
+complete_clusters <- cutree(complete_linkage, k = 3)
+complete_cluster_sizes <- table(complete_clusters)
+complete_cluster_means <- aggregate(normalized_data, by = list(Cluster = complete_clusters), mean)
+
+# Average Linkage
+average_clusters <- cutree(average_linkage, k = 3)
+average_cluster_sizes <- table(average_clusters)
+average_cluster_means <- aggregate(normalized_data, by = list(Cluster = average_clusters), mean)
+
+# Ward Linkage
+ward_clusters <- cutree(ward_linkage, k = 3)
+ward_cluster_sizes <- table(ward_clusters)
+ward_cluster_means <- aggregate(normalized_data, by = list(Cluster = ward_clusters), mean)
+# Printing the above few rows
+print(head(single_cluster_means))
+print(head(complete_cluster_means))
+print(head(average_cluster_means))
+print(ward_cluster_means)
+
+```
+### Single Linkage
+Cluster 1: In comparison to the general mean, this cluster has lower calories, higher protein, lower fat, lower salt, higher fiber, lower carbs, lower sugars, higher potassium, and lower vitamins.
+Cluster 2: The levels of most nutrients in this cluster are more in line with average.
+Cluster 3: When compared to the general mean, this cluster has more calories, a little higher protein, less fat, more salt, less fiber, more carbs, less sugar, less potassium, and more vitamins.
+### Complete inkage
+Complete Linkage cluster interpretations are comparable to those of Single Linkage clusters. The specifics of cluster formation may account for the majority of the differences.
+### Average Linkage
+Cluster 1: This cluster has lower calories, higher protein, lower fat, lower salt, greater fiber, lower carbs, lower sugars, higher potassium, and lower vitamins in comparison to the general mean. It is similar to Single and Complete Linkage.
+Cluster 2: In comparison to the global mean, this cluster has slightly greater salt, slightly higher fat, slightly higher protein, slightly higher calories, lower fiber, slightly higher carbs, slightly higher sugars, lower potassium, and slightly higher vitamins.
+Cluster 3: The levels of most nutrients in this cluster are more in line with average.
+### Ward Linkage
+Cluster 1: In line with the other techniques, this cluster has lower mean values for calories, protein, fat, salt, fiber, carbs, sugars, potassium, and vitamins than the overall mean.
+Cluster 2: In comparison to the general mean, this cluster offers slightly more calories, less protein, fat, salt, fiber, carbs, sugars, potassium, and vitamins. It also provides slightly greater fat, protein, and calories.
+Cluster 3: In comparison to the general mean, this cluster has slightly lower calories, slightly lower protein, fat, and salt as well as greater fiber, slightly higher carbs, slightly higher sugars, slightly higher potassium, and slightly more vitamins.
+## Selecting the Best Cluster
+It appears that Cluster 1 in the "Single Linkage," "Complete Linkage," "Average Linkage," and "Ward Linkage" methods generally matches the criteria of having low calories, high protein, low fat, high fiber, low carbohydrates, low sugars, high potassium, and high vitamins based on the descriptions given for the best cluster of cereals under each linkage method.
+As a result, the cluster that is designated as "Cluster 1" in all linking techniques appears to meet the predetermined requirements. It should be noted that the cluster labels might change based on how the clustering algorithm is specifically executed
+### Visualizing the Cluster 1 with all the variables
+```{r vizual, echo=FALSE}
+# single_cluster_means, complete_cluster_means, average_cluster_means, ward_cluster_means
+# Select Cluster 1 for each linkage method
+cluster1_single <- single_cluster_means[single_cluster_means$Cluster == 1, ]
+cluster1_complete <- complete_cluster_means[complete_cluster_means$Cluster == 1, ]
+cluster1_average <- average_cluster_means[average_cluster_means$Cluster == 1, ]
+cluster1_ward <- ward_cluster_means[ward_cluster_means$Cluster == 1, ]
+
+# Combine cluster means for plotting
+all_cluster1 <- rbind(cluster1_single, cluster1_complete, cluster1_average, cluster1_ward)
+all_cluster1$Linkage_Method <- c("Single", "Complete", "Average", "Ward")
+
+# Melt the data for easy plotting
+library(reshape2)
+melted_data <- melt(all_cluster1, id.vars=c("Cluster", "Linkage_Method"))
+
+# Create a bar plot
+library(ggplot2)
+ggplot(melted_data, aes(x=variable, y=value, fill=Linkage_Method)) +
+  geom_bar(stat="identity", position="dodge") +
+  facet_wrap(~Cluster, scales="free") +
+  labs(title="Nutritional Characteristics of Cluster 1",
+       x="Nutrient", y="Mean Value") +
+  theme_minimal()
+```
+The Cluste which represent tha mean values of nutritional characteristics like Low fats, high fiber, low calories, High vitamin can be consider as the best cluster of cereals that will be allowed to use in School's Canteen.
+```{r conclusion}
+# Combine cluster means for Cluster 1 across all linkage methods
+all_cluster1 <- rbind(cluster1_single, cluster1_complete, cluster1_average, cluster1_ward)
+all_cluster1$Linkage_Method <- c("Single", "Complete", "Average", "Ward")
+
+# Select relevant columns for the summary table
+summary_table <- all_cluster1[, c("Linkage_Method", "calories", "protein", "fat", "fiber", "carbo", "sugars", "potass", "vitamins")]
+
+# Print the summary table
+print(summary_table)
+
+```
